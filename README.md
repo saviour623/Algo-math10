@@ -1,0 +1,4 @@
+Algorithm: Representation of decimal floating point numbers (in their closest identity) as integers using their binary representation.
+Info: This algorithm is solely based on basic linear mathematics and is expected to rule out the complex methods always involved in representing the output identity of floating point numbers.
+Project: This is a personal algorithm i'm working on gradually and proficiently and at this time, it's still under writing and testing, therefore until completion, this repository will only act as a test repository; using any code from this repository (while it's okay to do so) will be at your risk.
+Author: Michael Saviour
