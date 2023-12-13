@@ -1,0 +1,26 @@
+
+math_i64_bit callidentity(math_i64_bit identifier){
+  register int32_t sizeofbit;
+  register math_i64_bit zerocbits __attribute__((unused));
+  register math_i64_bit bit_id = 0;
+  register math_i64_bit k, r;
+
+  k = r = 0;
+  sizeofbit = size(identifier) - 1; /* we don't care about the sign */
+
+  identifier >>= 2;
+  puts(bin(49, (char[65]){0}));
+
+  /* id = p - k. let p = 2r + 1 and k = 2c + 2; where r and c is dependent on p and k, thus: r = p or 0, and c = k or 0
+   * however here, both id and r is the same, as well as k and c */
+  do {
+    bit_id = (bit_id << 1) + 1;
+    if (NOT(identifier & 1) && identifier)
+      k = (k << 1) + 2;
+    else {
+      bit_id = bit_id - k;
+      k = 0;
+    }
+  } while ((identifier >>= 1));
+  return bit_id;
+}
