@@ -1,5 +1,9 @@
 #include "fiden.h"
+#include <float.h>
 #include <string.h>
+
+#define PASS (void)0
+#define BITS_EXPECT_R 256
 
 static inline math_i64_bit logbase2(math_i64_bit n){
   uint16_t r = 0;
@@ -17,16 +21,16 @@ char * bin(math_i64_bit tobin, char *__restrict__ buff){
   int oo = 0, st = 0;
 
   while (tobin){
-    buff[oo] = (tobin & 1) + 48;
-    tobin >>= 1;
-    oo += 1;
+	buff[oo] = (tobin & 1) + 48;
+	tobin >>= 1;
+	oo += 1;
   }
   generic_reversebuff(buff, st, oo);
 
   return buff;
 }
 
-math_i64_bit idenString(const char *__restrict__ str){
+math_i64_bit getIdentityFromBits(const char *__restrict__ str){
   register math_i64_bit bit_id = 0;
   register math_i64_bit k, r, oo;
 
@@ -37,47 +41,68 @@ math_i64_bit idenString(const char *__restrict__ str){
    * however here, both id and r is the same, as well as k and c */
   for (; *str != 0; str++)
   {
-    bit_id = (bit_id << 1) + 1;
-    if (!(*str & 0x0f))
-      k = (k << 1) + 2;
-    else {
-      bit_id = bit_id - k;
-      k = 0;
-    }
+	bit_id = (bit_id << 1) + 1;
+	if (!(*str & 0x0f))
+	  k = (k << 1) + 2;
+	else {
+	  bit_id = bit_id - k;
+	  k = 0;
+	}
   }
   return bit_id;
 }
 
 #define cast_to_i64(n) ((math_i64_bit)(n))
-char *getFltBits(long double nput, size_t numBit, char *bits_bf)
+char *getFltBits(double nput, size_t *numBit, char *bits_bf)
 {
-	register size_t oo;
+	register size_t oo, nmax;
 
-	if (numBit == 0 || numBit < 0)
+	if (numBit == NULL || *numBit <= 0)
 		return NULL;
 
-	for (oo = 0; (oo < numBit) && (nput != 0.0); oo++)
+	nmax = *numBit;
+	for (oo = 0; (oo < nmax) && (nput != 0.0); oo++)
 	{
 	  nput = nput * 2;
 	  bits_bf[oo] =  cast_to_i64(nput) ? ((nput -= 1), '1') : '0';
 	}
 	bits_bf[oo] = 0;
+	*numBit = oo;
 	return bits_bf;
 }
 
-char *fltoStr(double dbl_input, size_t dig_output)
+char *fltoStr(double db_nput, size_t dig_output)
 {
-	char *nbitBuf = NULL;
-	if (dbl_input == 0.0)
+	char nbitBuf[BITS_EXPECT_R];
+	math_i64_bit fid;
+	int exp, rawmant, sign;
+
+	union {
+		double F;
+		math_i64_bit U;
+	} bitinfo;
+
+	if (db_nput == 0.0)
 		return "0.0";
-	
+
+	if (db_nput < 0)
+	{
+		sign = 1;
+		db_nput = -db_nput;
+	}
+	exp = (((bitinfo.U << 1) & 0x0ffe000000000000) >> 52) - 1023;
+	rawmant = (bitinfo.U << 1) & ~0x0ffe000000000000;
+	fid = getIdentityFromBits( getFltBits(db_nput, &dig_output, nbitBuf) );
+
+	if (exp > 0)
+		PASS;
 }
 int main(void){
-  size_t sizevar;
+  size_t sizevar = 64;
   int n = 0;
   long double t = 0.1723462375345345005;
 
-  char *s = getFltBits(t, 64 + 1, (char[65]){0});
+  char *s = getFltBits(t, &sizevar, (char[65]){0});
   printf("%ld\n", strlen(s));
   puts(s);
   printf("%.23Lf\n", t);
