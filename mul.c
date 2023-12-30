@@ -27,20 +27,21 @@ __attribute__((nonnull)) int BigMulAdd(int * __restrict__ resAdd, int lmb1[], si
 	register unsigned int oo = 0, adLmb = 0, crLmb = 0;
 
 	resAdd[oo++] = lmb1[--szLmb1];
-	for (; szLmb1; oo++)
+	for (; szLmb1 && szLmb2; oo++)
 	{
 		adLmb = lmb2[--szLmb2] + lmb1[--szLmb1] + crLmb;
-		crLmb = 0;
 		if (adLmb > 0x1869f)
 		{
 			resAdd[oo] = adLmb % LIMB_SZ;
 			crLmb = adLmb / LIMB_SZ;
 			continue;
 		}
+		crLmb = 0;
 		resAdd[oo] = adLmb;
 	}
-	resAdd[oo] = lmb2[0] + crLmb;
-	return oo + 1;
+	if (szLmb2)
+		resAdd[oo++] = lmb2[szLmb2] + crLmb;
+	return oo;
 }
 int *BigMul(int lmb1[], int lmb2[])
 {
@@ -69,11 +70,11 @@ int main(void)
 	clock_t n, p;
 	int bf[6], l = 0;
 	int a[] = {472481, 55620, 40281};
-	int b[] = {130037, 83298, 97722};
+	int b[] = {97722};
 	int *resAdd = malloc(sizeof (int) * (6));
 	l = toLimb(bf, 6, 6209427609113893LL);
 	startTime(n);
-	c = BigMulAdd(resAdd, a, 3, b, 3);
+	c = BigMulAdd(resAdd, a, 3, b, 1);
 	stopTime(n);
 	printTime(n);
 
