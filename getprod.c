@@ -5,7 +5,8 @@
 #define PASS (void)0
 #define BITS_EXPECT_R 256
 
-static inline math_i64_bit logbase2(math_i64_bit n){
+static inline math_i64_bit logbase2(math_i64_bit n)
+{
   uint16_t r = 0;
 
   while (((n >>= 1) && r++))
@@ -13,11 +14,13 @@ static inline math_i64_bit logbase2(math_i64_bit n){
   return r-2;
 }
 
-static inline size_t sizeofuintmax_t(void){
+static inline size_t sizeofuintmax_t(void)
+{
   return sizeof (math_i64_bit);
 }
 
-char * bin(math_i64_bit tobin, char *__restrict__ buff){
+char * bin(math_i64_bit tobin, char *__restrict__ buff)
+{
   int oo = 0, st = 0;
 
   while (tobin){
@@ -30,7 +33,8 @@ char * bin(math_i64_bit tobin, char *__restrict__ buff){
   return buff;
 }
 
-math_i64_bit getIdentityFromBits(const char *__restrict__ str){
+math_i64_bit getIdentityFromBits(const char *__restrict__ str)
+{
   register math_i64_bit bit_id = 0;
   register math_i64_bit k, r, oo;
 
@@ -106,7 +110,7 @@ int main(void){
   printf("%ld\n", strlen(s));
   puts(s);
   printf("%.23Lf\n", t);
-  printf("%lu\n", idenString(s));
+  printf("%lu\n", getIdentityFromBits(s));
 }
 /*10000011010111000111110011011000100110001011*
 0.13562
