@@ -1,18 +1,16 @@
-#include "fiden.h"
+#include "../fiden.h"
 #include <time.h>
-#include <stdbool.h>
 
 #define startTime(n) ((n) = clock())
 #define stopTime(n) ((n) = clock() - (n))
 #define printTime(n) printf("%f\n", (n) / (double) CLOCKS_PER_SEC)
-
 #define reverseBf generic_reversebuff
-#define mulAdd(a, b, c)\
-	(((U64)(a) * (U64)(b)) + ((U64)(c)))
+#define mulAddDiv(a, b, c)\
+	(((U64)(a) * (U64)(b)) + ((U64)(c))) 
 #ifdef __GNUC__
      #define restrict __restrict__
 #endif
-typedef uint64_t U64;
+typedef long long int U64;
 const int extPow10[] = {
 	10, /* 1 */
 	100, /* 2 */
@@ -24,17 +22,8 @@ const int extPow10[] = {
 	100000000, /* 8 */
 	1000000000, /* 8 */
 };
-
 #define LIMB_SZ 100000
-#define FLIMB_SZ 0.00001L
-#define MULSZ_MAX 1024
-#define END -1024
-
-struct BigNum {
-	int N[MULSZ_MAX];
-	int size;
-	bool sign;
-};
+#define MULSZ_MAX 6
 
 __attribute__((nonnull)) int BigMulAdd(int * __restrict__ resAdd, int lmb1[], size_t szLmb1, int lmb2[], size_t szLmb2)
 {
@@ -56,33 +45,26 @@ __attribute__((nonnull)) int BigMulAdd(int * __restrict__ resAdd, int lmb1[], si
 
 	return oo;
 }
-
 int *BigMul(int lmb1[], int s1, int lmb2[], int s2)
 {
 	static int bigMulResult[MULSZ_MAX];
-	register unsigned long long oo = 0, bb = 0, ooNbb, adLmb = 0, crLmb = 0, tmp = s1;
-
-	for (bb = 0; bb < s2; bb++)
+	register unsigned long long oo = 0, adLmb = 0, crLmb = 0, tmp;
+	int bb = 0;
+	
+	for (bb = 0; s2; bb++, s2--)
 	{
-		for (oo = 0, crLmb = 0; (ooNbb = oo + bb), oo < s1; oo++)
+		tmp = s1 - 1;
+		for (oo = 0, crLmb = 0; oo < tmp+1; oo++)
 		{
-			adLmb = mulAdd(lmb2[bb], lmb1[oo], (crLmb + bigMulResult[ooNbb]));
-#if __GNUC__ && defined(__aarch64__) || defined(__arm__)
-			crLmb = adLmb * FLIMB_SZ;
-#else
+			adLmb = mulAddDiv(lmb2[s2-1], lmb1[tmp - oo],
+							  (crLmb + bigMulResult[oo + bb]));
 			crLmb = adLmb / LIMB_SZ;
-#endif
-			bigMulResult[ooNbb] = adLmb - (crLmb * LIMB_SZ);
+			bigMulResult[oo + bb] = adLmb % LIMB_SZ;
 		}
 		if (crLmb)
-			bigMulResult[ooNbb++] = crLmb;
+			bigMulResult[bb + oo] = crLmb;
 	}
-	bigMulResult[ooNbb] = END;
 	return bigMulResult;
-}
-
-int *BigPow(int lmb[], int p)
-{
 }
 __attribute__((nonnull)) int toLimb(int lmbBf[], size_t size, long long int val)
 {
@@ -98,18 +80,31 @@ int main(void)
 	long long int c;
 	clock_t n, p;
 	int bf[6], l = 0;
-	int a[] = {72481, 55000, 40281};
-	int b[] = {72481, 55000, 40281};
+	int a[] = {23423, 472481, 55620, 40281};
+	int b[] = {34234, 472481, 55620, 40281};
+
 	int *resAdd;// = malloc(sizeof (int) * (6));
 	int quo;
 	l = toLimb(bf, 6, 6209427609113893LL);
 	startTime(n);
-	resAdd = BigMul(a, 3, b, 3);
+	resAdd = BigMul(a, 4, b, 4);
 	stopTime(n);
 	printTime(n);
 
-	c = 6;
+	div_t dg = div(123456, 1000);
+	printf("quot %d, rem %d\n", dg.quot, dg.rem);
+	//for (int i = 0; i < l; i++)
+	//printf("%d\n", bf[i]);
+	c = 9;
 	for (int i = 0; i < c; i++)
 		printf("%d\n", resAdd[i]);
 	putchar(10);
 }
+/* 6, 20942, 76091 */
+	/* 6, 20942, 76091 */
+
+	/* carry 555780 */
+	/* 472481,55620,40281 */
+	/* 130037,83298,97722 */
+	/*130042,55780,53342,40281*/
+	/* 00000000000000011000011010011111 */
