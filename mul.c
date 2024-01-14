@@ -60,24 +60,21 @@ __attribute__((nonnull)) int BigMulAdd(int * __restrict__ resAdd, int lmb1[], si
 int *BigMul(int lmb1[], int s1, int lmb2[], int s2)
 {
 	static int bigMulResult[MULSZ_MAX];
-	register unsigned long long oo = 0, bb = 0, ooNbb, adLmb = 0, crLmb = 0, tmp = s1;
+	register unsigned long long oo, bb, ooNbb, adLmb, crLmb;
 
 	for (bb = 0; bb < s2; bb++)
 	{
-		for (oo = 0, crLmb = 0; (ooNbb = oo + bb), oo < s1; oo++)
+		ooNbb = bb;
+		for (oo = 0, crLmb = 0; oo < s1; ooNbb++, oo++)
 		{
 			adLmb = mulAdd(lmb2[bb], lmb1[oo], (crLmb + bigMulResult[ooNbb]));
-#if __GNUC__ && defined(__aarch64__) || defined(__arm__)
-			crLmb = adLmb * FLIMB_SZ;
-#else
-			crLmb = adLmb / LIMB_SZ;
-#endif
+			crLmb = ((adLmb >> 5) * 0x053e2d6239ULL) >> 46;
 			bigMulResult[ooNbb] = adLmb - (crLmb * LIMB_SZ);
 		}
 		if (crLmb)
-			bigMulResult[ooNbb++] = crLmb;
+			bigMulResult[ooNbb] = crLmb;
 	}
-	bigMulResult[ooNbb] = END;
+	bigMulResult[ooNbb + 1] = END;
 	return bigMulResult;
 }
 
@@ -100,8 +97,9 @@ int main(void)
 	int bf[6], l = 0;
 	int a[] = {72481, 55000, 40281};
 	int b[] = {72481, 55000, 40281};
-	int *resAdd;// = malloc(sizeof (int) * (6));
+	int *resAdd;
 	int quo;
+	
 	l = toLimb(bf, 6, 6209427609113893LL);
 	startTime(n);
 	resAdd = BigMul(a, 3, b, 3);

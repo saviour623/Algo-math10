@@ -67,8 +67,10 @@ char *getFltBits(double nput, size_t *numBit, char *bits_bf)
 	nmax = *numBit;
 	for (oo = 0; (oo < nmax) && (nput != 0.0); oo++)
 	{
-	  nput = nput * 2;
-	  bits_bf[oo] =  cast_to_i64(nput) ? ((nput -= 1), '1') : '0';
+		nput += nput;
+		bits_bf[oo] = 48 | !!(unsigned int) nput;
+		if (nput >= 1.0)
+			nput -= 1.0;
 	}
 	bits_bf[oo] = 0;
 	*numBit = oo;
@@ -105,8 +107,13 @@ int main(void){
   size_t sizevar = 64;
   int n = 0;
   long double t = 0.1723462375345345005;
+  clock_t time;
 
+  startTime(time);
   char *s = getFltBits(t, &sizevar, (char[65]){0});
+  stopTime(time);
+  printTime(time);
+
   printf("%ld\n", strlen(s));
   puts(s);
   printf("%.23Lf\n", t);
