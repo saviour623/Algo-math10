@@ -71,8 +71,7 @@ int *BigMul(int lmb1[], int s1, int lmb2[], int s2)
 			crLmb = ((adLmb >> 5) * 0x053e2d6239ULL) >> 46;
 			bigMulResult[ooNbb] = adLmb - (crLmb * LIMB_SZ);
 		}
-		if (crLmb)
-			bigMulResult[ooNbb] = crLmb;
+		bigMulResult[ooNbb] = crLmb;
 	}
 	bigMulResult[ooNbb + 1] = END;
 	return bigMulResult;
@@ -90,6 +89,32 @@ __attribute__((nonnull)) int toLimb(int lmbBf[], size_t size, long long int val)
 	reverseBf(lmbBf, size, tmp);
 	return oo;
 }
+void print(int *n)
+{
+    int k;
+    int oo = 0, pp = 0;
+    while ((n[oo++] != END))
+        ;
+    oo--;
+    reverseBf(n, pp, oo);
+    while ((k = *n) != END)
+    {
+        if (k < 1000)
+        {
+            k = k < 1000 ? k > 99 ? 2 :
+                k > 9 ? 3 : 4 : 0;
+
+            for (int j = 0; j < k; j++)
+                putchar('0');
+            printf("%d", *n);
+        }
+        else
+            printf("%d", *n);
+        n++;
+    }
+    putchar(10);
+
+}
 int main(void)
 {
 	long long int c;
@@ -105,9 +130,5 @@ int main(void)
 	resAdd = BigMul(a, 3, b, 3);
 	stopTime(n);
 	printTime(n);
-
-	c = 6;
-	for (int i = 0; i < c; i++)
-		printf("%d\n", resAdd[i]);
-	putchar(10);
+	print(resAdd);
 }
