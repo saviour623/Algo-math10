@@ -32,6 +32,10 @@ typedef uint64_t math_i64_bit;
 #define _BASE_RADIX 2
 #define _RADIX 5
 #define _PRECALC_POW5TH 125
+#define PRECALC_MIN 49
+#define PRECALC_MAX _PRECALC_POW5TH
+#define RADIX_ULLMAX 27
+
 #define _FETCH_PRECALC_LOC(n)\
 	(((n) > 49 && (n) < 64) ? powLookUpTable64[n] : ((n) > 64 && (n) < 96) ? \
 	 powLookUpTable95[n] : ((n) > 95 && (n) < 126) ? powLookUpTable95[n] ? NULL)
@@ -102,6 +106,7 @@ const char *powLookUpTable125[] = {
 	"470197740328915003187494614888898271127466222708835008603500682511366903781890869140625",
 	"2350988701644575015937473074444491355637331113544175043017503412556834518909454345703125",	NULL
 };
+
 
 math_i64_bit getIdentityFromBits(const char *__restrict__ str);
 char *getFltBits(double nput, size_t *numBit, char *bits_bf);

@@ -1,4 +1,5 @@
 #include "fiden.h"
+#include "lookup.h"
 #include <time.h>
 #include <stdbool.h>
 
@@ -12,6 +13,13 @@
 #ifdef __GNUC__
      #define restrict __restrict__
 #endif
+
+#define PASS (void)0
+#define LIMB_SZ 100000
+#define FLIMB_SZ 0.00001L
+#define MULSZ_MAX 1024
+#define END -1024
+
 typedef uint64_t U64;
 const int extPow10[] = {
 	10, /* 1 */
@@ -24,19 +32,17 @@ const int extPow10[] = {
 	100000000, /* 8 */
 	1000000000, /* 8 */
 };
-
-#define LIMB_SZ 100000
-#define FLIMB_SZ 0.00001L
-#define MULSZ_MAX 1024
-#define END -1024
+#define B125_SIZE 18
+const int P125[] = {B125_SIZE, 3125, 43457, 90945, 34518, 25568, 50341, 43017, 41750, 11354, 37331, 13556, 44449, 73074, 59374, 57501, 1644, 9887, 235, END};
+const static int precalculate_pow[PRECALC_COL_SIZE][PRECALC_ROW_SIZE] = PRECALC_POW5_TABLE(); 
 
 struct BigNum {
 	int N[MULSZ_MAX];
 	int size;
 	bool sign;
 };
-
-__attribute__((nonnull)) int BigMulAdd(int * __restrict__ resAdd, int lmb1[], size_t szLmb1, int lmb2[], size_t szLmb2)
+void print(int *n);
+__attribute__((nonnull)) int BigMulAdd(int * __restrict__ resAdd, const int lmb1[], size_t szLmb1, const int lmb2[], size_t szLmb2)
 {
 	register unsigned int oo = 0, adLmb = 0, crLmb = 0;
 
@@ -46,20 +52,19 @@ __attribute__((nonnull)) int BigMulAdd(int * __restrict__ resAdd, int lmb1[], si
 		adLmb = lmb2[--szLmb2] + lmb1[--szLmb1] + crLmb;
 		if (adLmb > 0x1869f)
 		{
-			resAdd[oo] = adLmb % LIMB_SZ;
-			crLmb = adLmb / LIMB_SZ;
+			resAdd[oo] = 1;
+			crLmb = adLmb - LIMB_SZ;
 			continue;
 		}
 		crLmb = 0;
 		resAdd[oo] = adLmb;
 	}
-
+	resAdd[oo + 1] = END;
 	return oo;
 }
 
-int *BigMul(int lmb1[], int s1, int lmb2[], int s2)
+int BigMul(int bigMulResult[], const int lmb1[], int s1, const int lmb2[], int s2)
 {
-	static int bigMulResult[MULSZ_MAX];
 	register unsigned long long oo, bb, ooNbb, adLmb, crLmb;
 
 	for (bb = 0; bb < s2; bb++)
@@ -74,11 +79,19 @@ int *BigMul(int lmb1[], int s1, int lmb2[], int s2)
 		bigMulResult[ooNbb] = crLmb;
 	}
 	bigMulResult[ooNbb + 1] = END;
-	return bigMulResult;
+	return 0;
 }
 
-int *BigPow(int lmb[], int p)
+char *Big5thPow(int resPow[], int p)
 {
+	register unsigned int oo, adLmb, crLmb, powRange;
+/**
+	if (p > 49 && p <= _PRECALC_POW5TH)
+		return _FETCH_PRECALC_LOC(p);
+*/
+	for (oo = 0; (p -= _PRECALC_POW5TH) > -1; oo++)
+			PASS;
+		resPow[0] = BigMul(resPow + 1, P125 + 1, P125[0], P125 + 1, P125[0]);
 }
 __attribute__((nonnull)) int toLimb(int lmbBf[], size_t size, long long int val)
 {
@@ -122,13 +135,18 @@ int main(void)
 	int bf[6], l = 0;
 	int a[] = {72481, 55000, 40281};
 	int b[] = {72481, 55000, 40281};
-	int *resAdd;
+	int resAdd[1024];
 	int quo;
-	
 	l = toLimb(bf, 6, 6209427609113893LL);
 	startTime(n);
-	resAdd = BigMul(a, 3, b, 3);
+	Big5thPow(resAdd, 125);
 	stopTime(n);
 	printTime(n);
-	print(resAdd);
+	print(resAdd + 1);
+//	print(resAdd);
 }
+/**
+	powRange = p > PRECALC_MAX ? _PRECALC_POW5TH
+		: p > PRECALC_MIN ? PRECALC_MIN + 1 :
+		p > RADIX_ULLMAX ? RADIX_ULLMAX : 0;
+*/
