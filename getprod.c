@@ -113,7 +113,7 @@ char *fltoStr(double db_nput, size_t prec)
 	int lmbsize;
 	math_i64_bit bit;
 	math_i64_bit exp, mant, sign;
-	register int k, h; /* tmp variables */
+	register int k, h, len; /* tmp variables */
 
 	union {
 		double F;
@@ -132,40 +132,45 @@ char *fltoStr(double db_nput, size_t prec)
 	exp = abs(((bitinfo.U & 0xfff0000000000000) >> 52) - 1023) + 52;
 	mant = ((bitinfo.U & 0xfffffffffffff) | 0x10000000000000);
 	mant >>= prec < 7 ? (exp -= 32), 32 : prec < 11 ? (exp -= 16), 16 : 0;
-	
+
 	if (exp < 50)
 	{
 		if (exp < 17)
 		{
-			toLimb(bfn, 5, (mant * pow5(exp)));
+			len = toLimb(bfn, 5, (mant * pow5(exp)));
 			goto edit;
 		}
 		else if (exp < 28)
 		{
 			k = toLimb(lmb, 5, pow5(exp));
 			h = toLimb(lmb2, 5, mant);
-			BigMul(bfn, lmb, k, lmb2, h);
+			len = BigMul(bfn, lmb, k, lmb2, h);
 		}
 		else
 		{
 			exp -= 27;
 			k = toLimb(bfn, 5, pow5(27));
 			h = toLimb(lmb2, 5, pow5(exp));
-			BigMul(lmb, bfn, k, lmb2, h);
+			len = BigMul(lmb, bfn, k, lmb2, h);
 			k = toLimb(lmb2, 5, mant);
-			BigMul(bfn, lmb, 5, lmb2, k);
+			len = BigMul(bfn, lmb, len, lmb2, k);
 		}
 		goto edit;
 	}
 	bit = getIdentityFromBits_i(mant, 20);
 	lmbsize = toLimb(lmb, 5, mant);
 edit:
+	if (prec < 7)
+	{
+#if defined(HONOUR_ROUND)
+#endif
+	}
 	print(bfn);
 }
 int main(void){
 	size_t sizevar = 256;
 	int n = 0;
-	double t = 0.00006;//0.1723462375345345005;
+	double t = 0.12659876;//0.1723462375345345005;
 	clock_t time;
 	char *s = getFltBits(t, &sizevar, (char[256]){0});
 	startTime(time);
@@ -180,4 +185,7 @@ int main(void){
 }
 /*10000011010111000111110011011000100110001011*
   0.13562
+
+  56700
+  
 */

@@ -73,7 +73,7 @@ int BigMul(int bigMulResult[], const int lmb1[], int s1, const int lmb2[], int s
 		bigMulResult[ooNbb] = crLmb;
 	}
 	bigMulResult[ooNbb + 1] = END;
-	return 0;
+	return ooNbb;
 }
 
 int Big5thPow(int resPow[], int p)
