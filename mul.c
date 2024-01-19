@@ -14,7 +14,6 @@
 #define LIMB_SZ 100000
 #define FLIMB_SZ 0.00001L
 #define MULSZ_MAX 1024
-#define END -1024
 
 typedef uint64_t U64;
 const int extPow10[] = {
@@ -90,7 +89,6 @@ int Big5thPow(int resPow[], int p)
 	for (oo = 0; (p -= _PRECALC_POW5TH) > -1; oo++)
 			PASS;
 	resPow[0] = BigMul(resPow + 1, P125 + 1, P125[0], P125 + 1, P125[0]);
-	
 	//while (
 }
 __attribute__((nonnull)) int toLimb(int lmbBf[], size_t size, math_i64_bit val)
@@ -107,9 +105,8 @@ void print(int *n)
     int oo = 0, pp = 0;
     while ((n[oo++] != END))
         ;
-    oo--;
-    reverseBf(n, pp, oo);
-    while ((k = *n) != END)
+   oo -= 2;
+   for (; (k = n[oo]), (oo > -1); oo--)
     {
         if (k < 1000)
         {
@@ -118,11 +115,10 @@ void print(int *n)
 
             for (int j = 0; j < k; j++)
                 putchar('0');
-            printf("%d", *n);
+            printf("%d", n[oo]);
         }
         else
-            printf("%d", *n);
-        n++;
+            printf("%d", n[oo]);
     }
     putchar(10);
 
