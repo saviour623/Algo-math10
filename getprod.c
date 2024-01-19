@@ -132,7 +132,7 @@ char *fltoStr(double db_nput, size_t prec)
 	exp = abs(((bitinfo.U & 0xfff0000000000000) >> 52) - 1023) + 52;
 	mant = ((bitinfo.U & 0xfffffffffffff) | 0x10000000000000);
 	mant >>= prec < 7 ? (exp -= 32), 32 : prec < 11 ? (exp -= 16), 16 : 0;
-
+	
 	if (exp < 50)
 	{
 		if (exp < 17)
