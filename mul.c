@@ -3,10 +3,6 @@
 #include <time.h>
 #include <stdbool.h>
 
-#define startTime(n) ((n) = clock())
-#define stopTime(n) ((n) = clock() - (n))
-#define printTime(n) printf("%f\n", (n) / (double) CLOCKS_PER_SEC)
-
 #define reverseBf generic_reversebuff
 #define mulAdd(a, b, c)\
 	(((U64)(a) * (U64)(b)) + ((U64)(c)))
@@ -34,14 +30,13 @@ const int extPow10[] = {
 };
 #define B125_SIZE 18
 const int P125[] = {B125_SIZE, 3125, 43457, 90945, 34518, 25568, 50341, 43017, 41750, 11354, 37331, 13556, 44449, 73074, 59374, 57501, 1644, 9887, 235, END};
-const static int precalculate_pow[PRECALC_COL_SIZE][PRECALC_ROW_SIZE] = PRECALC_POW5_TABLE(); 
 
 struct BigNum {
 	int N[MULSZ_MAX];
 	int size;
 	bool sign;
 };
-void print(int *n);
+
 __attribute__((nonnull)) int BigMulAdd(int * __restrict__ resAdd, const int lmb1[], size_t szLmb1, const int lmb2[], size_t szLmb2)
 {
 	register unsigned int oo = 0, adLmb = 0, crLmb = 0;
@@ -82,24 +77,28 @@ int BigMul(int bigMulResult[], const int lmb1[], int s1, const int lmb2[], int s
 	return 0;
 }
 
-char *Big5thPow(int resPow[], int p)
+int Big5thPow(int resPow[], int p)
 {
 	register unsigned int oo, adLmb, crLmb, powRange;
+
+	if (p < 27)
+		;//toLimb(resPow,
 /**
 	if (p > 49 && p <= _PRECALC_POW5TH)
 		return _FETCH_PRECALC_LOC(p);
 */
 	for (oo = 0; (p -= _PRECALC_POW5TH) > -1; oo++)
 			PASS;
-		resPow[0] = BigMul(resPow + 1, P125 + 1, P125[0], P125 + 1, P125[0]);
+	resPow[0] = BigMul(resPow + 1, P125 + 1, P125[0], P125 + 1, P125[0]);
+	
+	//while (
 }
-__attribute__((nonnull)) int toLimb(int lmbBf[], size_t size, long long int val)
+__attribute__((nonnull)) int toLimb(int lmbBf[], size_t size, math_i64_bit val)
 {
-	register int oo, tmp;
-	for (oo = 0; oo < size && val; oo++, (val /= LIMB_SZ))
+	register int oo = 0;
+	for (; oo < size && val; (val /= LIMB_SZ), oo++)
 		lmbBf[oo] = val % LIMB_SZ;
-	tmp = oo; size = 0;
-	reverseBf(lmbBf, size, tmp);
+	lmbBf[oo] = END;
 	return oo;
 }
 void print(int *n)
@@ -128,23 +127,27 @@ void print(int *n)
     putchar(10);
 
 }
+/**
 int main(void)
 {
+const static int precalc_pow[PRECALC_COL_SIZE][PRECALC_ROW_SIZE] = PRECALC_PO\
+W5_TABLE();
 	long long int c;
 	clock_t n, p;
 	int bf[6], l = 0;
-	int a[] = {72481, 55000, 40281};
-	int b[] = {72481, 55000, 40281};
+	{78125, 27050, 91702, 5907, 91351, 15628, 55756, 2775},
+	int a[] = {78125, 27050, 91702, 5907, 91351, 15628, 55756, 2775};
+	int b[] = {13893, 76091, 20942, 6};
 	int resAdd[1024];
 	int quo;
 	l = toLimb(bf, 6, 6209427609113893LL);
 	startTime(n);
-	Big5thPow(resAdd, 125);
+	BigMul(resAdd, , 8, b, 4);
 	stopTime(n);
 	printTime(n);
 	print(resAdd + 1);
 //	print(resAdd);
-}
+}*/
 /**
 	powRange = p > PRECALC_MAX ? _PRECALC_POW5TH
 		: p > PRECALC_MIN ? PRECALC_MIN + 1 :
