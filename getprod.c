@@ -104,16 +104,30 @@ inline math_i64_bit pow5(int n)
 		xn = (xn << 2) + xn;
 	return xn;
 }
+__attribute__((nonnull, gnu_inline))
+inline int extpow54(int n, int * restrict res)
+{
+	int k, h;
+	int tmpbf[2][MIN_ULMB_SIZE];
+
+	k = h = MIN_ULMB_SIZE;
+	if (n < 27)
+	{
+		(void) toLimb(res, &h, pow5(n));
+		return h;
+	}
+	n -= 27;
+	return BigMul(res, toLimb(tmpbf[0], &k, pow5(27)), k, toLimb(tmpbf[1], &h, pow5(n)), h);
+}
 char *fltoStr(double db_nput, size_t prec)
 {
-	char nbitBuf[BITS_EXPECT_R];
-	int bfn[1024];
-	int lmb[25];
-	int lmb2[25];
+	int bfn[25];
+	int lmb[15];
+	int lmb2[15];
 	int lmbsize;
 	math_i64_bit bit;
 	math_i64_bit exp, mant, sign;
-	register int k, h, len; /* tmp variables */
+	int k, h, len; /* tmp variables */
 
 	union {
 		double F;
@@ -133,55 +147,46 @@ char *fltoStr(double db_nput, size_t prec)
 	mant = ((bitinfo.U & 0xfffffffffffff) | 0x10000000000000);
 	mant >>= prec < 7 ? (exp -= 32), 32 : prec < 11 ? (exp -= 16), 16 : 0;
 
-	if (exp < 50)
+	k = h = len = MIN_ULMB_SIZE;
+	if (exp < 55)
 	{
 		if (exp < 17)
-		{
-			len = toLimb(bfn, 5, (mant * pow5(exp)));
-			goto edit;
-		}
+			toLimb(bfn, &len, (mant * pow5(exp)));
 		else if (exp < 28)
+			len = BigMul(bfn, toLimb(lmb, &k, pow5(exp)), k, toLimb(lmb2, &h, mant), h);
+   		else
 		{
-			k = toLimb(lmb, 5, pow5(exp));
-			h = toLimb(lmb2, 5, mant);
-			len = BigMul(bfn, lmb, k, lmb2, h);
-		}
-		else
-		{
-			exp -= 27;
-			k = toLimb(bfn, 5, pow5(27));
-			h = toLimb(lmb2, 5, pow5(exp));
-			len = BigMul(lmb, bfn, k, lmb2, h);
-			k = toLimb(lmb2, 5, mant);
-			len = BigMul(bfn, lmb, len, lmb2, k);
+			len = extpow54(exp, lmb);
+			len = BigMul(bfn, lmb, len, toLimb(lmb2, &k, mant), k);
 		}
 		goto edit;
 	}
 	bit = getIdentityFromBits_i(mant, 20);
-	lmbsize = toLimb(lmb, 5, mant);
+	//lmbsize = toLimb(lmb, 5, mant);
 edit:
 	if (prec < 7)
 	{
 #if defined(HONOUR_ROUND)
 #endif
 	}
-	print(bfn);
+//	print(bfn);
 }
 int main(void){
 	size_t sizevar = 256;
 	int n = 0;
 	double t = 0.12659876;//0.1723462375345345005;
 	clock_t time;
-	char *s = getFltBits(t, &sizevar, (char[256]){0});
+	char *s = getFltBits(t, &sizevar, (char[1024]){0});
 	startTime(time);
 	fltoStr(t, 6);
 	stopTime(time);
 	printTime(time);
-	printf("pow %lu\n", pow5(27));
-	printf("%lu\n", strlen(s));
+	printf("pow %llu\n", pow5(27));
+	printf("%u\n", strlen(s));
 	puts(s);
-	printf("%.64f\n", t);
-	printf("mant_i %lu\n", getIdentityFromBits(s));
+	printf("%f\n", t);
+	printf("mant_i %llu\n", getIdentityFromBits(s));
+	printf("%d\n", FLT_ROUNDS);
 }
 /*10000011010111000111110011011000100110001011*
   0.13562

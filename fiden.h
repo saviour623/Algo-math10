@@ -38,6 +38,7 @@ typedef uint64_t math_i64_bit;
 #define PRECALC_MIN 49
 #define PRECALC_MAX _PRECALC_POW5TH
 #define RADIX_ULLMAX 27
+#define MIN_ULMB_SIZE 5
 #define END -1024
 #define _FETCH_PRECALC_LOC(n)\
 	(((n) > 49 && (n) < 64) ? powLookUpTable64[n] : ((n) > 64 && (n) < 96) ? \
@@ -51,6 +52,7 @@ math_i64_bit getIdentityFromBits(const char *__restrict__ str);
 char *getFltBits(double nput, size_t *numBit, char *bits_bf);
 char *fltoStr(double db_nput, size_t dig_output);
 int BigMul(int bigMulResult[], const int lmb1[], int s1, const int lmb2[], int s2);
-__attribute__((nonnull)) int toLimb(int lmbBf[], size_t size, math_i64_bit val);
+__attribute__((nonnull)) int *toLimb(int lmbBf[], int *size, math_i64_bit val);
 math_i64_bit pow5(int);
+int extpow54(int n, int * restrict res);
 void print(int *n);

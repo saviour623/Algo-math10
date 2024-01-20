@@ -75,7 +75,17 @@ int BigMul(int bigMulResult[], const int lmb1[], int s1, const int lmb2[], int s
 	bigMulResult[ooNbb + 1] = END;
 	return ooNbb;
 }
+int BigShift(int *bigNum, int size, int shift)
+{
+	register int oo;
+ 	math_i64_bit adLmb, crLmb = 0;
 
+	for (oo = 0; oo < shift; oo++)
+	{
+		adLmb = (bigNum[oo] << 1) + crLmb;
+		bigNum[oo] = ((adLmb >> 5) * 171799) >> 19;
+	}
+}
 int Big5thPow(int resPow[], int p)
 {
 	register unsigned int oo, adLmb, crLmb, powRange;
@@ -91,13 +101,14 @@ int Big5thPow(int resPow[], int p)
 	resPow[0] = BigMul(resPow + 1, P125 + 1, P125[0], P125 + 1, P125[0]);
 	//while (
 }
-__attribute__((nonnull)) int toLimb(int lmbBf[], size_t size, math_i64_bit val)
+__attribute__((nonnull)) int *toLimb(int lmbBf[], int *size, math_i64_bit val)
 {
-	register int oo = 0;
-	for (; oo < size && val; (val /= LIMB_SZ), oo++)
+	register int oo = 0, si = *size;
+	for (; oo < si && val; (val /= LIMB_SZ), oo++)
 		lmbBf[oo] = val % LIMB_SZ;
 	lmbBf[oo] = END;
-	return oo;
+	*size = oo;
+	return lmbBf;
 }
 void print(int *n)
 {
