@@ -1,13 +1,13 @@
 #include <string.h>
 #include <fenv.h>
 #include <float.h>
+#include <stdbool.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <time.h>
 #include <stdio.h>
-#include <gmp.h>
 #include "lookup.h"
 #define generic_reversebuff(ARR, ST, LEN)\
   do {\
@@ -32,6 +32,7 @@
 #define NOT(EXP) (!(EXP))
 
 typedef uint64_t math_i64_bit;
+typedef unsigned int math_uint_t;
 #define _BASE_RADIX 2
 #define _RADIX 5
 #define _PRECALC_POW5TH 125
@@ -48,11 +49,19 @@ typedef uint64_t math_i64_bit;
 #define stopTime(n) ((n) = clock() - (n))
 #define printTime(n) printf("%f\n", (n) / (double) CLOCKS_PER_SEC)
 
+struct BigNum {
+	int bigNum[256];
+	int size;
+	bool sign;
+};
+
 math_i64_bit getIdentityFromBits(const char *__restrict__ str);
 char *getFltBits(double nput, size_t *numBit, char *bits_bf);
 char *fltoStr(double db_nput, size_t dig_output);
-int BigMul(int bigMulResult[], const int lmb1[], int s1, const int lmb2[], int s2);
+int BigMul(int bigMulResult[], const int lmb1[], math_uint_t s1, const int lmb2[], math_uint_t s2);
 __attribute__((nonnull)) int *toLimb(int lmbBf[], int *size, math_i64_bit val);
+int Bigsr(int *bigNum, int size, int shift);
+int BigShiftr(int * restrict bigNum, int size, int shift);
 math_i64_bit pow5(int);
 int extpow54(int n, int * restrict res);
-void print(int *n);
+void print(const int * restrict n);

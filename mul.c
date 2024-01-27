@@ -1,7 +1,4 @@
 #include "fiden.h"
-#include "lookup.h"
-#include <time.h>
-#include <stdbool.h>
 
 #define reverseBf generic_reversebuff
 #define mulAdd(a, b, c)\
@@ -27,79 +24,123 @@ const int extPow10[] = {
 	100000000, /* 8 */
 	1000000000, /* 8 */
 };
-#define B125_SIZE 18
-const int P125[] = {B125_SIZE, 3125, 43457, 90945, 34518, 25568, 50341, 43017, 41750, 11354, 37331, 13556, 44449, 73074, 59374, 57501, 1644, 9887, 235, END};
-
-struct BigNum {
-	int N[MULSZ_MAX];
-	int size;
-	bool sign;
-};
 
 __attribute__((nonnull)) int BigMulAdd(int * __restrict__ resAdd, const int lmb1[], size_t szLmb1, const int lmb2[], size_t szLmb2)
 {
-	register unsigned int oo = 0, adLmb = 0, crLmb = 0;
+	register unsigned int oo = 0, _quo = 0, _rem = 0;
 
 	resAdd[oo++] = lmb1[--szLmb1];
 	for (; szLmb1 && szLmb2; oo++)
 	{
-		adLmb = lmb2[--szLmb2] + lmb1[--szLmb1] + crLmb;
-		if (adLmb > 0x1869f)
+		_quo = lmb2[--szLmb2] + lmb1[--szLmb1] + _rem;
+		if (_quo > 0x1869f)
 		{
 			resAdd[oo] = 1;
-			crLmb = adLmb - LIMB_SZ;
+			_rem = _quo - LIMB_SZ;
 			continue;
 		}
-		crLmb = 0;
-		resAdd[oo] = adLmb;
+		_rem = 0;
+		resAdd[oo] = _quo;
 	}
 	resAdd[oo + 1] = END;
 	return oo;
 }
 
-int BigMul(int bigMulResult[], const int lmb1[], int s1, const int lmb2[], int s2)
+int BigMul(int bigMulResult[], const int lmb1[], math_uint_t s1, const int lmb2[], math_uint_t s2)
 {
-	register unsigned long long oo, bb, ooNbb, adLmb, crLmb;
+	register unsigned long long oo, bb, ooNbb, _quo, _rem;
 
 	for (bb = 0; bb < s2; bb++)
 	{
 		ooNbb = bb;
-		for (oo = 0, crLmb = 0; oo < s1; ooNbb++, oo++)
+		for (oo = 0, _rem = 0; oo < s1; ooNbb++, oo++)
 		{
-			adLmb = mulAdd(lmb2[bb], lmb1[oo], (crLmb + bigMulResult[ooNbb]));
-			crLmb = ((adLmb >> 5) * 0x053e2d6239ULL) >> 46;
-			bigMulResult[ooNbb] = adLmb - (crLmb * LIMB_SZ);
+			_quo = mulAdd(lmb2[bb], lmb1[oo], (_rem + bigMulResult[ooNbb]));
+#ifdef OPTIMIZE
+			_rem = ((_quo >> 5) * 0x053e2d6239ULL) >> 46;
+#else
+			_rem = _quo / LIMB_SZ;
+#endif
+			bigMulResult[ooNbb] = _quo - (_rem * LIMB_SZ);
 		}
-		bigMulResult[ooNbb] = crLmb;
+		bigMulResult[ooNbb] = _rem;
 	}
 	bigMulResult[ooNbb + 1] = END;
-	return ooNbb;
+	return ooNbb + !!(_rem);
 }
-int BigShift(int *bigNum, int size, int shift)
-{
-	register int oo;
- 	math_i64_bit adLmb, crLmb = 0;
 
-	for (oo = 0; oo < shift; oo++)
+__attribute__((gnu_inline, nonnull))
+inline int Bigsr31(int * restrict bigNum, int size, int shift)
+{
+	register long long _rem = 0, _quo = 0, k = 0, oo = size;
+	const int sf = (1 << shift) - 1;
+
+	if ((! size) || (! shift))
+		return 0;
+	while (oo--)
 	{
-		adLmb = (bigNum[oo] << 1) + crLmb;
-		bigNum[oo] = ((adLmb >> 5) * 171799) >> 19;
+		_quo = bigNum[oo];
+		_rem ? (k = _quo + (_rem * LIMB_SZ)) : (k = _quo);
+		bigNum[oo] = k >> shift;
+		_rem = k & sf;
 	}
+	while ((bigNum[--size] == 0));
+	return 	((bigNum[++size] = END), size);
 }
-int Big5thPow(int resPow[], int p)
+int Bigsrs(int *bigNum, int size, int shift)
 {
-	register unsigned int oo, adLmb, crLmb, powRange;
+	register int j, k;
+	
+	if ((! size) || (! shift))
+		return 0;
+	if (shift < 32)
+		return Bigsr31(bigNum, size, shift);
+	j = shift - ((k = shift / 31) * 31);
 
-	if (p < 27)
-		;//toLimb(resPow,
-/**
-	if (p > 49 && p <= _PRECALC_POW5TH)
-		return _FETCH_PRECALC_LOC(p);
-*/
-	for (oo = 0; (p -= _PRECALC_POW5TH) > -1; oo++)
-			PASS;
-	resPow[0] = BigMul(resPow + 1, P125 + 1, P125[0], P125 + 1, P125[0]);
-	//while (
+	for (shift = 31; k--;)
+	{
+		size = Bigsr31(bigNum, size, shift);
+		if ((! k) && j)
+			shift = j, j = 0, k = 1;
+	}
+	return size;
+}
+int BigShiftl(int *bigNum, int size, int shift)
+{
+	int oo, ee, ne, re;
+ 	math_i64_bit _quo, _rem = 0;
+
+	if (shift < 64)
+	{
+		int tmp[MIN_ULMB_SIZE];
+		return BigMul(bigNum, bigNum, size, toLimb(tmp, &ne, 1ULL << 63), ne);
+	}
+	ne = shift / 9;
+	re = shift - ((ne >> 2) + ne);
+	shift = 9;
+	ne = 62;
+	while (ne--)
+	{
+		for (ee = 0; ee < size; ee++) 
+		{
+			_quo = (bigNum[ee] << shift) + _rem;
+			_rem = ((_quo * 171799) >> 34);
+			bigNum[ee] = _quo - (_rem * LIMB_SZ);
+		}
+		_rem ? bigNum[ee] = _rem, size = ee + 1 : 0;
+		
+		if ((ne == 0) && re)
+		{
+			ne += 1;
+			shift = re;
+			re = 0;
+		}
+	}
+	bigNum[ee + 1] = END;
+	return size;	
+}
+int Big5thPow(int resPow[], int p __attribute__((unused)))
+{
 }
 __attribute__((nonnull)) int *toLimb(int lmbBf[], int *size, math_i64_bit val)
 {
@@ -110,53 +151,60 @@ __attribute__((nonnull)) int *toLimb(int lmbBf[], int *size, math_i64_bit val)
 	*size = oo;
 	return lmbBf;
 }
-void print(int *n)
+void print(const int * restrict n)
 {
     int k;
     int oo = 0, pp = 0;
     while ((n[oo++] != END))
         ;
    oo -= 2;
+   const int p = oo;
    for (; (k = n[oo]), (oo > -1); oo--)
     {
-        if (k < 1000)
+        if ((k < 10000) && (oo != p))
         {
-            k = k < 1000 ? k > 99 ? 2 :
-                k > 9 ? 3 : 4 : 0;
+            k = k > 999 ? 1 : k > 99 ? 2 :
+                k > 9 ? 3 : 4;
 
             for (int j = 0; j < k; j++)
                 putchar('0');
-            printf("%d", n[oo]);
+            printf("%u", n[oo]);
         }
         else
-            printf("%d", n[oo]);
+            printf("%u", n[oo]);
     }
     putchar(10);
 
 }
+inline int subtract(int a, int b)
+{
+	int temp = 0;
+	while (b != 0)
+	{
+		temp = ((~a) & b) << 1;
+		a = a ^ b;
+		b = temp;
+	}
+	return a;
+}
 /**
 int main(void)
 {
-const static int precalc_pow[PRECALC_COL_SIZE][PRECALC_ROW_SIZE] = PRECALC_PO\
-W5_TABLE();
+	const static int precalc_pow[PRECALC_COL_SIZE][PRECALC_ROW_SIZE] = PRECALC_POW5_TABLE();
 	long long int c;
 	clock_t n, p;
 	int bf[6], l = 0;
-	{78125, 27050, 91702, 5907, 91351, 15628, 55756, 2775},
-	int a[] = {78125, 27050, 91702, 5907, 91351, 15628, 55756, 2775};
-	int b[] = {13893, 76091, 20942, 6};
+	int a[256] = {99999, 99999, 2, END};
+	int b[20] = {35436, 76576, 64465, 76577, 86895, 13893, 76091, 20942, 35436, 76576, 64465, 76577, 86895, 13893, 76091, 20942, 6, END};
 	int resAdd[1024];
 	int quo;
-	l = toLimb(bf, 6, 6209427609113893LL);
+	print(b);
+	//l = toLimb(bf, 6, 6209427609113893LL);
 	startTime(n);
-	BigMul(resAdd, , 8, b, 4);
+	quo = Bigsrs(b, 17, 31);
+//	quo = subtract(5367877, 100000);
 	stopTime(n);
 	printTime(n);
-	print(resAdd + 1);
-//	print(resAdd);
-}*/
-/**
-	powRange = p > PRECALC_MAX ? _PRECALC_POW5TH
-		: p > PRECALC_MIN ? PRECALC_MIN + 1 :
-		p > RADIX_ULLMAX ? RADIX_ULLMAX : 0;
+	print(b);
+}
 */

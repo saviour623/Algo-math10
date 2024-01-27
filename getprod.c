@@ -146,7 +146,7 @@ char *fltoStr(double db_nput, size_t prec)
 	exp = abs(((bitinfo.U & 0xfff0000000000000) >> 52) - 1023) + 52;
 	mant = ((bitinfo.U & 0xfffffffffffff) | 0x10000000000000);
 	mant >>= prec < 7 ? (exp -= 32), 32 : prec < 11 ? (exp -= 16), 16 : 0;
-
+	printf("mant: %llu, exp: %lld\n", mant, exp);
 	k = h = len = MIN_ULMB_SIZE;
 	if (exp < 55)
 	{
@@ -157,13 +157,17 @@ char *fltoStr(double db_nput, size_t prec)
    		else
 		{
 			len = extpow54(exp, lmb);
+			printf("%d\n", len);
 			len = BigMul(bfn, lmb, len, toLimb(lmb2, &k, mant), k);
+			print(bfn);
 		}
 		goto edit;
 	}
+	puts("here");
 	bit = getIdentityFromBits_i(mant, 20);
 	//lmbsize = toLimb(lmb, 5, mant);
 edit:
+	print(bfn);
 	if (prec < 7)
 	{
 #if defined(HONOUR_ROUND)
@@ -174,7 +178,7 @@ edit:
 int main(void){
 	size_t sizevar = 256;
 	int n = 0;
-	double t = 0.12659876;//0.1723462375345345005;
+	double t = 0.96545456786;//0.1723462375345345005;
 	clock_t time;
 	char *s = getFltBits(t, &sizevar, (char[1024]){0});
 	startTime(time);
